@@ -1,0 +1,44 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>GG Checker ‑ PokéAPI</title>
+<style>
+  body{font-family:monospace;background:#111;color:#0f0}
+  #log{white-space:pre;height:70vh;overflow-y:scroll}
+  .gg{color:#0f0}.bad{color:#666}
+</style>
+<h1>GG Checker (estático, nunca cai)</h1>
+<label>De <input id=a type=number value=1 min=1 max=13000>
+até <input id=b type=number value=500></label>
+<button id=go>GO</button> <span id=stats></span>
+<div id=log></div>
+
+<script>
+const log=document.getElementById('log'), stats=document.getElementById('stats');
+const base='https://pokeapi.co/api/v2/pokemon/';
+
+async function check(id){
+    const req=new Request(base+id,{mode:'cors',cache:'force-cache'});
+    const ok=await fetch(req).then(r=>r.ok).catch(()=>false);
+    const span=document.createElement('span');
+    span.className=ok?'gg':'bad';
+    span.textContent=(ok?'GG':'--')+' ';
+    log.appendChild(span);
+    return ok;
+}
+
+async function batch(){
+    log.textContent='';
+    const [a,b]=[a.value,b.value].map(Number);
+    const t0=performance.now();
+    let good=0;
+    for(let i=a;i<=b;i++){
+        if(await check(i)) good++;
+        stats.textContent=`${i-a+1}/${b-a+1}  GG:${good}`;
+        await new Promise(r=>setTimeout(r,0)); // yield UI
+    }
+    const time=((performance.now()-t0)/1000).toFixed(1);
+    stats.textContent+=`  (${time}s)`;
+}
+go.onclick=batch;
+navigator.serviceWorker.register('sw.js'); // pré-cache
+</script>
